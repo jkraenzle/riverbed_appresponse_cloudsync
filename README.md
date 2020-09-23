@@ -1,6 +1,7 @@
 Script to grab and convert the JSON file of AWS IP ranges from https://ip-ranges.amazonaws.com/ip-ranges.json to AppResponse Host Groups and automatically post them to the desired appliance. The script includes an optional region filter to limit what gets updated to select AWS regions.
 
 Command line execution is:
+
 python awsipranges.py --hostname <hostname> --username <username> --filterfile <filename>
 
 Not yet implemented:
