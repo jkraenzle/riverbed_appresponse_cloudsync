@@ -3,6 +3,7 @@ import requests
 import json
 import argparse
 import getpass
+import yaml
 
 AWSIPRANGESURL ='https://ip-ranges.amazonaws.com/ip-ranges.json' 
 
@@ -33,13 +34,15 @@ def appresponse_authenticate (hostname, username, password):
 		access_token = token_json ["access_token"]
 		return access_token
 
-def appresponse_awsipranges_to_hostgroups (result_json):
+def appresponse_awsipranges_to_hostgroups (result_json, region_filter=None):
 
 	awsipprefixes = result_json["prefixes"]
 	
 	awsiprange_hostgroups = {}
 	for awsipprefix in awsipprefixes:
 		region = awsipprefix["region"]
+		if (region_filter != None) and (region not in region_filter):
+			continue
 		prefix = awsipprefix["ip_prefix"]
 		if region in awsiprange_hostgroups.keys ():
 			awsiprange_hostgroups[region].append(prefix)
@@ -50,6 +53,8 @@ def appresponse_awsipranges_to_hostgroups (result_json):
 	awsipv6prefixes = result_json["ipv6_prefixes"]
 	for awsipv6prefix in awsipv6prefixes:
 		region = awsipv6prefix["region"]
+		if (region_filter != None) and (region not in region_filter):
+			continue
 		ipv6_prefix = awsipv6prefix["ipv6_prefix"]
 		if region in awsiprange_hostgroups.keys ():
 			awsiprange_hostgroups[region].append(ipv6_prefix)
@@ -106,6 +111,7 @@ def main ():
 	parser = argparse.ArgumentParser (description="Automated conversion of documented AWS IP ranges to Host Groups")
 	parser.add_argument ('--hostname')
 	parser.add_argument ('--username')
+	parser.add_argument ('--filterfile')
 	args = parser.parse_args ()
 
 	if args.hostname == None:
@@ -123,7 +129,14 @@ def main ():
 
 	awsresult = aws_ipranges ()
 
-	hostgroups = appresponse_awsipranges_to_hostgroups (awsresult)
+	fn = args.filterfile
+	try:
+		with open(fn) as fh:
+			filter = yaml.load (fh)
+	except FileNotFoundError:
+		filter = None
+
+	hostgroups = appresponse_awsipranges_to_hostgroups (awsresult, filter)
 
 	resulting_hostgroups = appresponse_hostgroups_merge (args.hostname, access_token, hostgroups)
 	if resulting_hostgroups == None:
