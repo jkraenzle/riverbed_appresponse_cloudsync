@@ -2,10 +2,17 @@ Script to grab and convert the JSON file of AWS IP ranges from https://ip-ranges
 
 Command line execution is:
 
-<i>python awsipranges.py --hostname [hostname] --username [username] --filterfile [filename]</i>
+<i>python awsipranges.py --hostname [hostname] --username [username] --regionfilter [filename] --servicefilter [filename]</i>
+
+Required:
+--hostname
+--username
+
+Optional:
+--regionfilter
+--servicefilter
 
 Not yet implemented:
-* Filter for Amazon services (listed in JSON)
 * Storage and comparison of dates within Amazon file to avoid merging in AppResponse if nothing has changed
 * Ability to modify Host Group names in terms of capitalization or prepending of string (e.g., "AWS")
 * Ability to push to more than one appliance at a time
