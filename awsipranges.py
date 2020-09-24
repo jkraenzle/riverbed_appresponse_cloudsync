@@ -21,7 +21,7 @@ def appresponse_authenticate (hostname, username, password):
 	
 	credentials = {"username":username, "password":password}
 
-	payload = {"generate_refresh_token":True, "user_credentials":credentials}
+	payload = {"generate_refresh_token":False, "user_credentials":credentials}
 	headers = {"Content-Type":"application/json"}
 	result = requests.post ('https://' + hostname + '/api/mgmt.aaa/2.0/token', data=json.dumps(payload), headers=headers, verify=False)
 
@@ -34,7 +34,7 @@ def appresponse_authenticate (hostname, username, password):
 		access_token = token_json ["access_token"]
 		return access_token
 
-def appresponse_awsipranges_to_hostgroups (result_json, region_filter=None):
+def appresponse_awsipranges_to_hostgroups (result_json, region_filter=None, service_filter=None):
 
 	awsipprefixes = result_json["prefixes"]
 	
@@ -42,6 +42,9 @@ def appresponse_awsipranges_to_hostgroups (result_json, region_filter=None):
 	for awsipprefix in awsipprefixes:
 		region = awsipprefix["region"]
 		if (region_filter != None) and (region not in region_filter):
+			continue
+		service = awsipprefix["service"]
+		if (service_filter != None) and (service not in service_filter):
 			continue
 		prefix = awsipprefix["ip_prefix"]
 		if region in awsiprange_hostgroups.keys ():
@@ -54,6 +57,9 @@ def appresponse_awsipranges_to_hostgroups (result_json, region_filter=None):
 	for awsipv6prefix in awsipv6prefixes:
 		region = awsipv6prefix["region"]
 		if (region_filter != None) and (region not in region_filter):
+			continue
+		service = awsipprefix["service"]
+		if (service_filter != None) and (service not in service_filter):
 			continue
 		ipv6_prefix = awsipv6prefix["ipv6_prefix"]
 		if region in awsiprange_hostgroups.keys ():
@@ -109,9 +115,10 @@ def main ():
 
 	# Parse the arguments
 	parser = argparse.ArgumentParser (description="Automated conversion of documented AWS IP ranges to Host Groups")
-	parser.add_argument ('--hostname')
-	parser.add_argument ('--username')
-	parser.add_argument ('--filterfile')
+	parser.add_argument('--hostname')
+	parser.add_argument('--username')
+	parser.add_argument('--regionfilter')
+	parser.add_argument('--servicefilter')
 	args = parser.parse_args ()
 
 	if args.hostname == None:
@@ -129,14 +136,27 @@ def main ():
 
 	awsresult = aws_ipranges ()
 
-	fn = args.filterfile
+	fn = args.regionfilter
 	try:
-		with open(fn) as fh:
-			filter = yaml.load (fh)
+		if fn != None:
+			with open(fn) as fh:
+				regionfilter = yaml.load (fh)
+		else:
+			regionfilter = None
 	except FileNotFoundError:
-		filter = None
+		regionfilter = None
 
-	hostgroups = appresponse_awsipranges_to_hostgroups (awsresult, filter)
+	fn = args.servicefilter
+	try:
+		if fn != None:
+			with open(fn) as fh:
+				servicefilter = yaml.load (fh)
+		else:
+			servicefilter = None
+	except FileNotFoundError:
+		servicefilter = None
+
+	hostgroups = appresponse_awsipranges_to_hostgroups (awsresult, regionfilter, servicefilter)
 
 	resulting_hostgroups = appresponse_hostgroups_merge (args.hostname, access_token, hostgroups)
 	if resulting_hostgroups == None:
