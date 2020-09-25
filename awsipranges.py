@@ -53,7 +53,7 @@ def yamlread (fn):
 # -----
 
 AWSIPRANGESURL = "https://ip-ranges.amazonaws.com/ip-ranges.json"
-AWSIPRANGESSYNCTIMEFILE = "synctime.yaml"
+AWSIPRANGESSYNCTIMEFILE = "awssynctime.yaml"
 
 def aws_ipranges ():
 
@@ -120,7 +120,10 @@ def appresponse_awsipranges_to_hostgroups (result_json, region_filter=None, serv
 
 	hostgroups = []
 	for awsiprange_hostgroup in awsiprange_hostgroups:
-		hostgroup_name = prepend + awsiprange_hostgroup
+		if prepend != None:
+			hostgroup_name = prepend + awsiprange_hostgroup
+		else:
+			hostgroup_name = awsiprange_hostgroup
 		hostgroup = {
 			# "created":,
 			"desc": "Created by script",
