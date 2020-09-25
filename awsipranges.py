@@ -216,9 +216,14 @@ def appresponse_existing_hosts_convert (ranges):
 	
 def appresponse_hostgroups_compare (existing_hostgroups, new_hostgroups):
 
+	hostgroups_created = []
+	hostgroup_ranges_removed = {}
+	hostgroup_ranges_added = {}
+
 	for new_hostgroup in new_hostgroups:
 		found_name = False
 		for existing_hostgroup in existing_hostgroups:
+			
 			if new_hostgroup['name'] == existing_hostgroup['name']:
 				found_name = True
 				if 'hosts' in existing_hostgroup:
@@ -229,21 +234,19 @@ def appresponse_hostgroups_compare (existing_hostgroups, new_hostgroups):
 				if set(new_hostgroup["hosts"]) == set(hosts_to_compare):
 					break
 				else:
-					print ("The following Host Group %s has changed." % new_hostgroup['name'])
 					removed_ranges = set(hosts_to_compare) - set(new_hostgroup['hosts']) 
 					if len(removed_ranges) != 0:
-						print ("Removed IP ranges: %s" % removed_ranges)
+						hostgroup_ranges_removed[new_hostgroup['name']] = removed_ranges
 					added_ranges = set(new_hostgroup['hosts']) - set(hosts_to_compare) 
 					if len(added_ranges) != 0:
-						print ("Added IP ranges: %s" % added_ranges)
+						hostgroup_ranges_added[new_hostgroup['name']] = added_ranges
 
 			if found_name == True:
 				break
 		if found_name == False:
-			print("The following Host Groups were added.")
-			print(new_hostgroup)
-	
-	return				
+			hostgroups_created.append (new_hostgroup['name'])
+
+	return hostgroups_created, hostgroup_ranges_removed, hostgroup_ranges_added
 
 def filterread (fn):
 	try:
@@ -285,6 +288,9 @@ def main ():
 	# Pull latest AWS IP Range file
 	awsresult = aws_ipranges ()
 
+	shortcut = False
+	### Check sync data to see if there is a shortcut
+
 	# Read filters
 	regionfilter = filterread (args.regionfilter)
 	servicefilter = filterread (args.servicefilter)
@@ -292,19 +298,49 @@ def main ():
 	# Convert and filter AWS IP ranges to Host Group definitions
 	hostgroups = appresponse_awsipranges_to_hostgroups (awsresult, regionfilter, servicefilter)
 
-	# Merge converted Host Group definitions into appliance
-	result = appresponse_hostgroups_merge (args.hostname, access_token, hostgroups)
-	
 	# Check to see if there are differences
-	appresponse_hostgroups_compare (existing_hostgroups, hostgroups)
+	new_hostgroups, hostgroup_prefixes_removed, hostgroup_prefixes_added = appresponse_hostgroups_compare (existing_hostgroups, hostgroups)
+	if len(new_hostgroups) == 0 and len(hostgroup_prefixes_removed) == 0 and len(hostgroup_prefixes_added) == 0:
+		shortcut = True
+		print ("The set of Host Groups chosen to update have the same definitions on the appliance.")
+		print ("There are no Host Group definitions to push.")
+	if len(new_hostgroups) > 0:
+		print ("The new Host Groups are:")
+		for new_hostgroup in new_hostgroups:
+			print ("\t%s" % new_hostgroup)
 	
-	if result.status_code in [200, 201, 204]:
-		#resulting_hostgroups = result.json ()
-		#print (resulting_hostgroups)
-		print ("Host Group definitions updated.")
-	else:
-		print ("Host Group definitions not updated.")
+	# Get the intersection of the sets
+	added_and_removed = hostgroup_prefixes_added.keys () & hostgroup_prefixes_removed.keys ()
+	just_added = hostgroup_prefixes_added.keys () - added_and_removed
+	just_removed = hostgroup_prefixes_removed.keys () - added_and_removed
+	if len(added_and_removed) > 0:
+		for changed_hostgroup in added_and_removed:
+			print ("The Host Group %s had prefixes added and removed." % changed_hostgroup)
+			print ("Added:")
+			print ("\t%s" % hostgroup_prefixes_added[changed_hostgroup])
+			print ("Removed:")
+			print ("\t%s" % hostgroup_prefixes_removed[changed_hostgroup])
+	if len(just_added) > 0:
+		for changed_hostgroup in just_added:
+			print ("The Host Group %s had prefixes added." % changed_hostgroup)
+			print ("Added:")
+			print ("\t%s" % hostgroup_prefixes_added[changed_hostgroup])
+	if len(just_removed) > 0:
+		for changed_hostgroup in just_removed:
+			print ("The Host Group %s had prefixes removed." % changed_hostgroup)
+			print ("Removed:")
+			print ("\t%s" % hostgroup_prefixes_removed[changed_hostgroup])
 
+	if shortcut == False:
+		# Merge converted Host Group definitions into appliance
+		result = appresponse_hostgroups_merge (args.hostname, access_token, hostgroups)
+	
+		if result.status_code in [200, 201, 204]:
+			#resulting_hostgroups = result.json ()
+			#print (resulting_hostgroups)
+			print ("Host Group definitions updated.")
+		else:
+			print ("Host Group definitions not updated.")
 		
 	return
 
