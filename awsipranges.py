@@ -68,7 +68,7 @@ def appresponse_authenticate (hostname, username, password):
 		access_token = token_json ["access_token"]
 		return access_token
 
-def appresponse_awsipranges_to_hostgroups (result_json, region_filter=None, service_filter=None):
+def appresponse_awsipranges_to_hostgroups (result_json, region_filter=None, service_filter=None, prepend=None):
 
 	awsipprefixes = result_json["prefixes"]
 	
@@ -103,13 +103,13 @@ def appresponse_awsipranges_to_hostgroups (result_json, region_filter=None, serv
 			awsiprange_hostgroups[region] = values
 
 	hostgroups = []
-	for hostgroup_name in awsiprange_hostgroups:
-
+	for awsiprange_hostgroup in awsiprange_hostgroups:
+		hostgroup_name = prepend + awsiprange_hostgroup
 		hostgroup = {
 			# "created":,
 			"desc": "Created by script",
 			"enabled": True,
-			"hosts": awsiprange_hostgroups [hostgroup_name],
+			"hosts": awsiprange_hostgroups [awsiprange_hostgroup],
 			#"id": ,
 			#"in_speed":,
 			#"in_speed_unit":,
@@ -213,6 +213,12 @@ def appresponse_existing_hosts_convert (ranges):
 		i+=1
 
 	return converted_hosts
+
+def appresponse_hostname_form (hostgroup_name, prepend):
+	if prepend != None:
+		return prepend + hostgroup_name
+	else:
+		return hostgroup_name
 	
 def appresponse_hostgroups_compare (existing_hostgroups, new_hostgroups):
 
@@ -223,28 +229,28 @@ def appresponse_hostgroups_compare (existing_hostgroups, new_hostgroups):
 	for new_hostgroup in new_hostgroups:
 		found_name = False
 		for existing_hostgroup in existing_hostgroups:
-			
-			if new_hostgroup['name'] == existing_hostgroup['name']:
+			new_hostgroup_name = new_hostgroup['name']
+			if new_hostgroup_name == existing_hostgroup['name']:
 				found_name = True
 				if 'hosts' in existing_hostgroup:
 					hosts_to_compare = appresponse_existing_hosts_convert (existing_hostgroup['hosts'])
 				else:
 					hosts_to_compare = []
 
-				if set(new_hostgroup["hosts"]) == set(hosts_to_compare):
+				if set(new_hostgroup['hosts']) == set(hosts_to_compare):
 					break
 				else:
 					removed_ranges = set(hosts_to_compare) - set(new_hostgroup['hosts']) 
 					if len(removed_ranges) != 0:
-						hostgroup_ranges_removed[new_hostgroup['name']] = removed_ranges
+						hostgroup_ranges_removed[new_hostgroup_name] = removed_ranges
 					added_ranges = set(new_hostgroup['hosts']) - set(hosts_to_compare) 
 					if len(added_ranges) != 0:
-						hostgroup_ranges_added[new_hostgroup['name']] = added_ranges
+						hostgroup_ranges_added[new_hostgroup_name] = added_ranges
 
 			if found_name == True:
 				break
 		if found_name == False:
-			hostgroups_created.append (new_hostgroup['name'])
+			hostgroups_created.append (new_hostgroup_name)
 
 	return hostgroups_created, hostgroup_ranges_removed, hostgroup_ranges_added
 
@@ -268,6 +274,7 @@ def main ():
 	parser.add_argument('--username')
 	parser.add_argument('--regionfilter')
 	parser.add_argument('--servicefilter')
+	parser.add_argument('--hostgroupprepend')
 	args = parser.parse_args ()
 
 	if args.hostname == None:
@@ -296,7 +303,7 @@ def main ():
 	servicefilter = filterread (args.servicefilter)
 
 	# Convert and filter AWS IP ranges to Host Group definitions
-	hostgroups = appresponse_awsipranges_to_hostgroups (awsresult, regionfilter, servicefilter)
+	hostgroups = appresponse_awsipranges_to_hostgroups (awsresult, regionfilter, servicefilter, args.hostgroupprepend)
 
 	# Check to see if there are differences
 	new_hostgroups, hostgroup_prefixes_removed, hostgroup_prefixes_added = appresponse_hostgroups_compare (existing_hostgroups, hostgroups)
