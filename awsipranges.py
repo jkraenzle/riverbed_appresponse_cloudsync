@@ -9,7 +9,8 @@ import yaml
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-### YAML Loader, as default Loader is not safe
+# ---- YAML helper functions -----
+# Define YAML Loader, as default Loader is not safe
 class YAMLLoader(yaml.SafeLoader):
     """YAML Loader with `!include` constructor."""
 
@@ -37,18 +38,33 @@ def construct_include(loader: YAMLLoader, node: yaml.Node) -> Any:
 
 yaml.add_constructor('!include', construct_include, YAMLLoader)
 
-###
+def yamlread (fn):
+	try:
+		if fn != None:
+			with open(fn) as fh:
+				yamlresult = yaml.load (fh, YAMLLoader)
+		else:
+			yamlresult = None
+	except FileNotFoundError:
+		yamlresult = None
 
-AWSIPRANGESURL ='https://ip-ranges.amazonaws.com/ip-ranges.json' 
+	return yamlresult
+
+# -----
+
+AWSIPRANGESURL = "https://ip-ranges.amazonaws.com/ip-ranges.json"
+AWSIPRANGESSYNCTIMEFILE = "synctime.yaml"
 
 def aws_ipranges ():
 
 	result = requests.get (AWSIPRANGESURL)
 
 	if result.status_code in [200, 201, 204]:
-		return result.json ()
+		result_json = result.json()
+		
+		return result_json
 	else:
-		print ("Failed to pull AWS IP ranges from %s" % AWSIPRANGESURL)
+		print("Failed to pull AWS IP ranges from %s" % AWSIPRANGESURL)
 		return None
 
 def appresponse_authenticate (hostname, username, password):
@@ -60,8 +76,8 @@ def appresponse_authenticate (hostname, username, password):
 	result = requests.post ('https://' + hostname + '/api/mgmt.aaa/2.0/token', data=json.dumps(payload), headers=headers, verify=False)
 
 	if result.status_code not in [200, 201, 204]:
-		print ("Status code was %s" % result.status_code)
-		print ("Error: %s" % result.content)
+		print("Status code was %s" % result.status_code)
+		print("Error: %s" % result.content)
 		return None
 	else:
 		token_json = result.json ()
@@ -254,29 +270,37 @@ def appresponse_hostgroups_compare (existing_hostgroups, new_hostgroups):
 
 	return hostgroups_created, hostgroup_ranges_removed, hostgroup_ranges_added
 
-def filterread (fn):
-	try:
-		if fn != None:
-			with open(fn) as fh:
-				filter = yaml.load (fh, YAMLLoader)
-		else:
-			filter = None
-	except FileNotFoundError:
-		filter = None
-
-	return filter
-
 def main ():
 
 	# Parse the arguments
 	parser = argparse.ArgumentParser (description="Automated conversion of documented AWS IP ranges to Host Groups")
 	parser.add_argument('--hostname')
 	parser.add_argument('--username')
-	parser.add_argument('--regionfilter')
-	parser.add_argument('--servicefilter')
-	parser.add_argument('--hostgroupprepend')
+	parser.add_argument('--regionfilter', help="YAML file containing list of regions to include in Host Groups")
+	parser.add_argument('--servicefilter', help="YAML file containing list of services to include in Host Groups")
+	parser.add_argument('--hostgroupprepend', help="String prepended to the AWS regions to form the Host Group names")
+	parser.add_argument('--ignoresynctime', action='store_true', help="Do not store time from AWS IP range JSON that is used to check for updates. This flag is useful in testing.")
+	parser.add_argument('--checkforupdates', action='store_true', help="Check if AWS IP range JSON was pulled in last run")
 	args = parser.parse_args ()
 
+	# Pull latest AWS IP Range file
+	awsresult = aws_ipranges ()
+
+	# Validate the argument --checkforupdates
+	if args.checkforupdates != None: 
+		if isinstance(args.checkforupdates, bool):
+			if args.checkforupdates == True:
+				oldsynctime = yamlread(args.hostname + AWSIPRANGESSYNCTIMEFILE)
+				if oldsynctime != None and oldsynctime['syncToken'] == awsresult ['syncToken']:
+					# Shortcut the rest of the script if there is no updates of IP ranges on AWS
+					print("AWS has not updated their IP ranges on %s. No Host Group definitions will be updated." % AWSIPRANGESURL)
+					print("If other configurations have changed, please set --checkforupdates to False.")
+					return
+		else:
+			print ("The value for --checkforupdates is not recognized.")
+
+	# Assuming there is a new update or the user has not requested to check for updates, validate the other arguments
+	# and confirm that the script can authenticate to the AppResponse appliance
 	if args.hostname == None:
 		print ("Please specify a hostname using --hostname")
 		return
@@ -288,19 +312,19 @@ def main ():
 	print ("Please provide the password for account %s" % args.username)
 	password = getpass.getpass ()
 
-	# Authenticate to appliance and pull existing Host Groups
 	access_token = appresponse_authenticate (args.hostname, args.username, password)
+
+	# Pull existing Host Groups from appliance for comparison
+	# The script allows filtering, so it will compare existing Host Groups to new definitions to provide details on changes
 	existing_hostgroups = appresponse_hostgroups_get (args.hostname, access_token)
 
-	# Pull latest AWS IP Range file
-	awsresult = aws_ipranges ()
-
+	# If there is no difference in the Host Groups after the filters are applied, do not bother to upload them to the appliance
+	
 	shortcut = False
-	### Check sync data to see if there is a shortcut
 
-	# Read filters
-	regionfilter = filterread (args.regionfilter)
-	servicefilter = filterread (args.servicefilter)
+	# Read filters from files specified in arguments; filters set to None implies nothing to filter
+	regionfilter = yamlread (args.regionfilter)
+	servicefilter = yamlread (args.servicefilter)
 
 	# Convert and filter AWS IP ranges to Host Group definitions
 	hostgroups = appresponse_awsipranges_to_hostgroups (awsresult, regionfilter, servicefilter, args.hostgroupprepend)
@@ -308,7 +332,9 @@ def main ():
 	# Check to see if there are differences
 	new_hostgroups, hostgroup_prefixes_removed, hostgroup_prefixes_added = appresponse_hostgroups_compare (existing_hostgroups, hostgroups)
 	if len(new_hostgroups) == 0 and len(hostgroup_prefixes_removed) == 0 and len(hostgroup_prefixes_added) == 0:
+		# Flag the lack of differences so there is no attempt to upload the Host Groups
 		shortcut = True
+
 		print ("The set of Host Groups chosen to update have the same definitions on the appliance.")
 		print ("There are no Host Group definitions to push.")
 	if len(new_hostgroups) > 0:
@@ -346,6 +372,14 @@ def main ():
 			#resulting_hostgroups = result.json ()
 			#print (resulting_hostgroups)
 			print ("Host Group definitions updated.")
+
+			# Write YAML file to keep track of last publication pull
+			if isinstance(args.ignoresynctime, bool) and args.ignoresynctime == True:
+				print ("The script is not saving a sync time.")
+			else:
+				synctime_dict = {'syncToken':awsresult['syncToken'], 'createDate':awsresult['createDate']}
+				with open(args.hostname + AWSIPRANGESSYNCTIMEFILE, 'w') as yaml_file:
+					yaml.dump(synctime_dict, yaml_file, default_flow_style=False)
 		else:
 			print ("Host Group definitions not updated.")
 		
