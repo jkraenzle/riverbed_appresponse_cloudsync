@@ -2,7 +2,7 @@ Script to grab and convert the JSON file of AWS IP ranges from https://ip-ranges
 
 Command line execution is:
 
-<i>python awsipranges.py --hostname [hostname] --username [username] --regionfilter [filename] --servicefilter [filename] --hostgroupprepend [string] [--ignoresynctime] [--checkforupdates]</i>
+<i>python awsipranges.py --hostname [hostname] --username [username] [--regionfilter [filename]] [--servicefilter [filename]] [--hostgroupprepend [string]] [--ignoresynctime] [--checkforupdates]</i>
 
 Required:
 --hostname
