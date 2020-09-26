@@ -6,6 +6,8 @@ Scripts to convert public list of Cloud IPs to Host Groups.
 	<li>https://endpoints.office.com/endpoints/[instance]?clientrequestid=b10c5ed1-bad1-445f-b386-b919946339a7</li></ul>
 </ul>
 
+<hr>
+
 The script awsipranges.py grabs and converts the JSON file of AWS IP ranges from https://ip-ranges.amazonaws.com/ip-ranges.json to AppResponse Host Groups and automatically post them to the desired appliance. The script includes an optional region filter to limit what gets updated to select AWS regions.
 
 Command line execution is:
@@ -33,6 +35,8 @@ The provided file regionfilter.yaml provides the list of all AWS regions provide
 
 The provided file servicefilter.yaml provides the list of all AWS services provided as of 9/25/2020. Use comments to add/remove services from being converted to Host Group definitions.
 
+<hr>
+
 The script m365endpoints.py grabs and converts the JSON file of Office 365 endpoints from https://endpoints.office.com/endpoints/[instance]?clientrequestid=b10c5ed1-bad1-445f-b386-b919946339a7 for each instance specified in the instance filter.
 
 Command line execution is:
@@ -49,16 +53,18 @@ Optional:
 --serviceareafilter [YAML file]
         Service areas specified in file are included in Host Groups
 --hostgroupprepend [string]
-        String to prepend to region names to include in Host Groups in AppResponse (e.g. "AWS ")
+        String to prepend to region names to include in Host Groups in AppResponse (e.g. "M365 ")
 --ignoreversions
-        Flag, no parameter value. Including this flag stops the script from storing the syncToken from the AWS IP range JSON file in a YAML file. This is useful when testing and not wanting to update a process that regularly syncs to the same appliance.
+        Flag, no parameter value. Including this flag stops the script from storing the versions from the M365 endpoint JSON file in a YAML file. This is useful when testing and not wanting to update a process that regularly syncs to the same appliance.
 --checkforupdates
-        Flag, no parameter value. Including this flag has the script check the current syncToken in the AWS IP range JSON file against the previous synchronization time that was saved during the last run of the script. This avoids synchronizing the same data when no changes have been made. This flag should not be included if a configuration change has been made to the YAML files.
+        Flag, no parameter value. Including this flag has the script check the current versions in the M365 endpoint version JSON file against the previous version that was saved during the last run of the script. This avoids synchronizing the same data when no changes have been made. This flag should not be included if a configuration change has been made to the YAML files.
 
 Notes:
 The provided file serviceareafilter.yaml provides the list of all M365 Service Areas provided as of 9/25/2020. Use comments to add or remove regions from being converted to Host Group definitions.
 
 The provided file instancefilter.yaml provides the list of all M365 instances provided as of 9/25/2020. Use comments to add/remove services from being converted to Host Group definitions.
+
+<hr>
 
 Not yet implemented:
 * Common code pulled into helper Python scripts for import independently
