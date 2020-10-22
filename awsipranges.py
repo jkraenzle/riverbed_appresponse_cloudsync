@@ -311,10 +311,12 @@ def main ():
 	if args.username == None:
 		print ("Please specify a username using --username")
 		return
-
-	print ("Please provide the password for account %s" % args.username)
-	password = getpass.getpass ()
-
+	if args.password == None:
+		print ("Please provide the password for account %s" % args.username)
+		password = getpass.getpass ()
+	else:
+		password = args.password
+		
 	access_token = appresponse_authenticate (args.hostname, args.username, password)
 
 	# Pull existing Host Groups from appliance for comparison
