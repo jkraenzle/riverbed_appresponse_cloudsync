@@ -1,2 +1,3 @@
-0 * * * * root python3 /home/cloudsync/github/docker/aws.py
-30 * * * * root python3 /home/cloudsync/github/docker/msft.py
+0 * * * * root python3 /home/cloudsync/github/docker/aws.py >> /var/log/cron.log
+30 * * * * root python3 /home/cloudsync/github/docker/msft.py >> /var/log/cron.log
+# Empty line
