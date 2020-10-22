@@ -279,6 +279,7 @@ def main ():
 	parser = argparse.ArgumentParser (description="Automated conversion of documented AWS IP ranges to Host Groups")
 	parser.add_argument('--hostname')
 	parser.add_argument('--username')
+	parser.add_argument('--password')
 	parser.add_argument('--regionfilter', help="YAML file containing list of regions to include in Host Groups")
 	parser.add_argument('--servicefilter', help="YAML file containing list of services to include in Host Groups")
 	parser.add_argument('--hostgroupprepend', help="String prepended to the AWS regions to form the Host Group names")
