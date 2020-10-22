@@ -1,0 +1,29 @@
+FROM python:3.8.6-slim-buster
+
+# Set the environment variables for the script
+ENV TZ=Americas/New_York
+
+# Install libraries
+RUN apt-get update \
+        && apt-get install -y --no-install-recommends git \
+        && apt-get install -y cron \
+        && rm -rf /var/lib/apt/lists/*
+
+# Create a user and set a common working directory
+RUN useradd --create-home cloudsync
+WORKDIR /home/cloudsync
+CMD mkdir github && cd github
+
+# Ensure permissions on the repository
+RUN git clone https://github.com/jkraenzle/appresponse_cloudsync.git /home/cloudsync/github
+CMD chmod a+x /home/cloudsync/github/*.py
+#CMD chmod a+x /home/cloudsync/github/docker/*.py
+
+# Install dependencies for repository
+RUN pip install -r /home/cloudsync/github/requirements.txt
+
+# Use cron to automate
+#ADD /home/cloudsync/github/docker/python-cron /etc/cron.d
+CMD service cron start
+ADD /home/cloudsync/github/cron-python /etc/cron.d
+CMD touch /etc/cron.d/cron-python
