@@ -290,23 +290,24 @@ def main ():
 
 	# Validate the argument --checkforupdates
 	instances_to_update = []
-	oldversions = yamlread(args.hostname + M365ENDPOINTSINSTANCEFILE)
-	if args.checkforupdates != None and isinstance(args.checkforupdates, bool) and args.checkforupdates == True and oldversions != None:		
+	if args.checkforupdates != None and isinstance(args.checkforupdates, bool) and args.checkforupdates == True:
+		oldversions = yamlread(args.hostname + M365ENDPOINTSINSTANCEFILE)
+				
 		# Walk through new list of instances and add to list to pull
 		for m365item in m365versions:
 			m365instance_found = False
-			for olditem in oldversions:
-				if olditem['instance'] == m365item['instance']:
-					m365instance_found = True
-					if olditem['latest'] != m365item['latest']:
-						if instancefilter == None or m365item in instancefilter:
-							instances_to_update.append(m365item['instance'])
-					else:
-						print("Instance %s has not been updated." % m365item)
+			if oldversions != None:
+				for olditem in oldversions:
+					if olditem['instance'] == m365item['instance']:
+						m365instance_found = True
+						if olditem['latest'] != m365item['latest']:
+							if instancefilter == None or m365item in instancefilter:
+								instances_to_update.append(m365item['instance'])
+						else:
+							print("Instance %s has not been updated." % m365item)
 			if m365instance_found == False:
 				if instancefilter == None or m365item in instancefilter:
 					instances_to_update.append(m365instance['instance'])				
-
 	else:
 		if instancefilter != None:
 			instances_to_update.extend(instancefilter)
