@@ -290,9 +290,8 @@ def main ():
 
 	# Validate the argument --checkforupdates
 	instances_to_update = []
-	if args.checkforupdates != None and isinstance(args.checkforupdates, bool) and args.checkforupdates == True:
-		oldversions = yamlread(args.hostname + M365ENDPOINTSINSTANCEFILE)
-			
+	oldversions = yamlread(args.hostname + M365ENDPOINTSINSTANCEFILE)
+	if args.checkforupdates != None and isinstance(args.checkforupdates, bool) and args.checkforupdates == True and oldversions != None:		
 		# Walk through new list of instances and add to list to pull
 		for m365item in m365versions:
 			m365instance_found = False
