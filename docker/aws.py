@@ -10,8 +10,8 @@ regionfilter = os.environ["REGIONFILTER"]
 servicefilter = os.environ["SERVICEFILTER"]
 hostgroupprepend = os.environ["AWSHOSTGROUPPREPEND"]
 
-args = ["python",
-        "awsipranges.py",
+args = ["python3",
+        "/home/cloudsync/github/awsipranges.py",
         "--hostname", hostname,
         "--username", username,
         "--password", password,
