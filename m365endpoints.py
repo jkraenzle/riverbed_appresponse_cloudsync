@@ -307,7 +307,7 @@ def main ():
 							print("Instance %s has not been updated." % m365item)
 			if m365instance_found == False:
 				if instancefilter == None or m365item in instancefilter:
-					instances_to_update.append(m365instance['instance'])				
+					instances_to_update.append(m365item['instance'])				
 	else:
 		if instancefilter != None:
 			instances_to_update.extend(instancefilter)
