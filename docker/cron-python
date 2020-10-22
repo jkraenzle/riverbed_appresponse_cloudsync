@@ -1,0 +1,2 @@
+0 * * * * root python3 aws.py
+30 * * * * root python3 msft.py
