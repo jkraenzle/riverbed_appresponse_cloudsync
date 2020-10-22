@@ -275,6 +275,7 @@ def main ():
 	parser = argparse.ArgumentParser (description="Automated coninstance of documented M365 IP ranges to Host Groups")
 	parser.add_argument('--hostname')
 	parser.add_argument('--username')
+	parser.add_argument('--password')
 	parser.add_argument('--instancefilter', help="YAML file containing list of services to include in Host Groups")
 	parser.add_argument('--serviceareafilter', help="YAML file containing list of regions to include in Host Groups")
 	parser.add_argument('--hostgroupprepend', help="String prepended to the M365 regions to form the Host Group names")
