@@ -10,8 +10,8 @@ instancefilter = os.environ["INSTANCEFILTER"]
 serviceareafilter = os.environ["SERVICEAREAFILTER"]
 hostgroupprepend = os.environ["MSFTHOSTGROUPPREPEND"]
 
-args = ["python",
-        "m365endpoints.py",
+args = ["python3",
+        "/home/cloudsync/github/m365endpoints.py",
         "--hostname", hostname,
         "--username", username,
         "--password", password,
