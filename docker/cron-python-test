@@ -1,2 +1,2 @@
-* * * * * root python3 /home/cloudsync/github/docker/aws.py > /var/log/cron.log 2>&1
+* * * * * root echo 'Hello World' >> /var/log/cron.log 2>&1
 # Empty line
