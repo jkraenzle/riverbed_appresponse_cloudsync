@@ -11,3 +11,5 @@ Run using the command:
 docker run -d -t "cloudsync:1.0"
 
 The existing dockerfile has a time zone of Americas Eastern Time (New York). The cron-python file has a configuration for the AWS Host Groups to update every day at midnight ET and the Microsoft Host Groups to update every day at 12:30 AM ET.
+
+The Python wrappers aws.py and msft.py are required since cron does not carry over environment variables that could be defined in the container during build or execution.
