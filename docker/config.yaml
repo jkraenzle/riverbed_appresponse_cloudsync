@@ -1,0 +1,9 @@
+HOSTNAME: appresponse
+USERNAME: admin
+PASSWORD: admin
+AWSHOSTGROUPPREPEND: "AWS "
+SERVICEFILTER: /home/cloudsync/github/servicefilter.yaml
+REGIONFILTER: /home/cloudsync/github/regionfilter.yaml
+MSFTHOSTGROUPPREPEND: "MSFT "
+INSTANCEFILTER: /home/cloudsync/github/instancefilter.yaml
+SERVICEAREAFILTER: /home/cloudsync/github/serivceareafilter.yaml
