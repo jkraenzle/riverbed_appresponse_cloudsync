@@ -2,28 +2,46 @@ FROM python:3.8.6-slim-buster
 
 # Set the environment variables for the script
 ENV TZ=Americas/New_York
+ENV PYTHONUNBUFFERED=1
 
 # Install libraries
 RUN apt-get update \
         && apt-get install -y --no-install-recommends git \
         && apt-get install -y cron \
-        && rm -rf /var/lib/apt/lists/*
+        && apt-get clean
+
 
 # Create a user and set a common working directory
 RUN useradd --create-home cloudsync
 WORKDIR /home/cloudsync
-CMD mkdir github && cd github
+RUN mkdir github && cd github
+
+# Load files from GitHub into container
+RUN git clone https://github.com/jkraenzle/appresponse_cloudsync.git /home/cloudsync/github
+
+### Add local changes here
+### Files can have different names and locations on container as long as config.yaml is updated
+# COPY servicefilter.yaml /home/cloudsync/github/servicefilter.yaml
+# COPY instancefilter.yaml /home/cloudsync/github/instancefilter.yaml
+# COPY serviceareafilter.yaml /home/cloudsync/github/serviceareafilter.yaml
+# COPY regionfilter.yaml /home/cloudsync/github/regionfilter.yaml
 
 # Ensure permissions on the repository
-RUN git clone https://github.com/jkraenzle/appresponse_cloudsync.git /home/cloudsync/github
-CMD chmod a+x /home/cloudsync/github/*.py
-#CMD chmod a+x /home/cloudsync/github/docker/*.py
+RUN chmod 0744 /home/cloudsync/github/*.py
+RUN chmod 0744 /home/cloudsync/github/*.yaml
+RUN chmod 0744 /home/cloudsync/github/docker/*.py
+# Add environment variables for Python script in Cron
+COPY config.yaml /home/cloudsync/github/docker/config.yaml
+RUN chmod 0744 /home/cloudsync/github/docker/*.yaml
 
 # Install dependencies for repository
 RUN pip install -r /home/cloudsync/github/requirements.txt
 
 # Use cron to automate
-#ADD /home/cloudsync/github/docker/python-cron /etc/cron.d
-CMD service cron start
-ADD /home/cloudsync/github/cron-python /etc/cron.d
-CMD touch /etc/cron.d/cron-python
+RUN service cron start
+
+# Position file into the proper directory and set execution rights
+RUN mv /home/cloudsync/github/docker/cron-python /etc/cron.d
+RUN chmod 0644 /etc/cron.d/cron-python
+
+CMD ["cron", "-f"]
