@@ -59,7 +59,7 @@ servicefilter = config["SERVICEFILTER"]
 hostgroupprepend = config["AWSHOSTGROUPPREPEND"]
 
 args = ["python",
-	"awsipranges.py",
+	"/home/cloudsync/github/awsipranges.py",
 	"--hostname", hostname,
 	"--username", username,
 	"--password", password,
