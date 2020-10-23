@@ -49,6 +49,7 @@ def yamlread (fn):
 # -----
 
 config = yamlread ("/home/cloudsync/github/docker/config.yaml")
+print (config)
 
 hostname = config["HOSTNAME"]
 username = config["USERNAME"]
