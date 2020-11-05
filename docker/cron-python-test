@@ -1,2 +1,3 @@
 * * * * * root echo "Hello World" >> /var/log/cron.log 2>&1
+* * * * * root python test.py >> /var/log/cron.log 2>&1
 # Empty line
