@@ -41,7 +41,7 @@ RUN pip install -r /home/cloudsync/github/requirements.txt
 RUN service cron start
 
 # Position file into the proper directory and set execution rights
-RUN mv /home/cloudsync/github/docker/cron-python /etc/cron.d
-RUN chmod 0644 /etc/cron.d/cron-python
+RUN mv /home/cloudsync/github/docker/cron-python-test /etc/cron.d
+RUN chmod 0644 /etc/cron.d/cron-python-test
 
 CMD ["cron", "-f"]
