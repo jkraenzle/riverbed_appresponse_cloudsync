@@ -57,7 +57,7 @@ regionfilter = config["REGIONFILTER"]
 servicefilter = config["SERVICEFILTER"] 
 hostgroupprepend = config["AWSHOSTGROUPPREPEND"]
 
-args = ["python",
+args = ["/usr/local/bin/python3",
 	"/home/cloudsync/github/awsipranges.py",
 	"--hostname", hostname,
 	"--username", username,
