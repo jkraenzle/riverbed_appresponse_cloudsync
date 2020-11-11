@@ -58,7 +58,7 @@ serviceareafilter = config["SERVICEAREAFILTER"]
 hostgroupprepend = config["MSFTHOSTGROUPPREPEND"]
 
 args = ["/usr/local/bin/python3",
-	"/home/cloudsync/github/m365ipranges.py",
+	"/home/cloudsync/github/m365endpoints.py",
 	"--hostname", hostname,
 	"--username", username,
 	"--password", password,
