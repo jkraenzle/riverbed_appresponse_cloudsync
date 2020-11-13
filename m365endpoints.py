@@ -12,28 +12,28 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # ---- YAML helper functions -----
 # Define YAML Loader, as default Loader is not safe
 class YAMLLoader(yaml.SafeLoader):
-    """YAML Loader with `!include` constructor."""
+	"""YAML Loader with `!include` constructor."""
 
-    def __init__(self, stream: IO) -> None:
-        """Initialise Loader."""
+	def __init__(self, stream: IO) -> None:
+		"""Initialise Loader."""
 
-        try:
-            self._root = os.path.split(stream.name)[0]
-        except AttributeError:
-            self._root = os.path.curdir
+		try:
+			self._root = os.path.split(stream.name)[0]
+		except AttributeError:
+			self._root = os.path.curdir
 
-        super().__init__(stream)
+		super().__init__(stream)
 
 
 def construct_include(loader: YAMLLoader, node: yaml.Node) -> Any:
-    """Include file referenced at node."""
+	"""Include file referenced at node."""
 
-    filename = os.path.abspath(os.path.join(loader._root, loader.construct_scalar(node)))
-    extension = os.path.splitext(filename)[1].lstrip('.')
+	filename = os.path.abspath(os.path.join(loader._root, loader.construct_scalar(node)))
+	extension = os.path.splitext(filename)[1].lstrip('.')
 
-    with open(filename, 'r') as f:
-        if extension in ('yaml', 'yml'):
-            return yaml.load(f, YAMLLoader)
+	with open(filename, 'r') as f:
+		if extension in ('yaml', 'yml'):
+			return yaml.load(f, YAMLLoader)
 
 
 yaml.add_constructor('!include', construct_include, YAMLLoader)
@@ -290,32 +290,34 @@ def main ():
 
 	# Validate the argument --checkforupdates
 	instances_to_update = []
-	if args.checkforupdates != None and isinstance(args.checkforupdates, bool) and args.checkforupdates == True:
-		oldversions = yamlread(args.hostname + M365ENDPOINTSINSTANCEFILE)
-				
-		# Walk through new list of instances and add to list to pull
-		for m365item in m365versions:
-			m365instance_found = False
-			if oldversions != None:
-				for olditem in oldversions:
-					if olditem['instance'] == m365item['instance']:
-						m365instance_found = True
-						if olditem['latest'] != m365item['latest']:
-							if instancefilter == None or m365item in instancefilter:
-								instances_to_update.append(m365item['instance'])
-						else:
-							print("Instance %s has not been updated." % m365item)
-			if m365instance_found == False:
-				if instancefilter == None or m365item in instancefilter:
-					instances_to_update.append(m365item['instance'])				
-	else:
-		if instancefilter != None:
-			instances_to_update.extend(instancefilter)
+	if args.checkforupdates != None:
+		if isinstance(args.checkforupdates, bool):
+			if args.checkforupdates == True:
+				oldversions = yamlread(args.hostname + M365ENDPOINTSINSTANCEFILE)
+				# Walk through new list of instances and add to list to pull
+				if oldversions != None:
+					for m365item in m365versions:
+						m365instance_found = False
+						for olditem in oldversions:
+							if olditem['instance'] == m365item['instance']:
+								m365instance_found = True
+								if olditem['latest'] != m365item['latest']:
+									if instancefilter == None or m365item in instancefilter:
+										instances_to_update.append(m365item['instance'])
+								else:
+									print("Instance %s has not been updated." % m365item)
+					if m365instance_found == False:
+						if instancefilter == None or m365item in instancefilter:
+							instances_to_update.append(m365item['instance'])
+			else:
+				if instancefilter != None:
+					instances_to_update.extend(instancefilter)
+				else:
+					print("Please use --instancefilter to specify M365 endpoint instances to use to create Host Group definitions.")
+					return
 		else:
-			print("Please use --instancefilter to specify M365 endpoint instances to use to create Host Group definitions.")
-			print("Or check for updates against previous instances.")
-			return
-
+			print ("The value for --checkforupdates is not recognized.")
+				
 	if len(instances_to_update) == 0:			
 		# Shortcut the rest of the script if there is no updates of IP ranges on M365
 		print("M365 has not updated their endpoint file instance on %s." % M365ENDPOINTSVERSIONSURL)
