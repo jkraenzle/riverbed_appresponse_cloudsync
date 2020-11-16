@@ -309,6 +309,14 @@ def main ():
 					if m365instance_found == False:
 						if instancefilter == None or m365item in instancefilter:
 							instances_to_update.append(m365item['instance'])
+				# If there was never cached entries, use the instances specified to create new Host Groups
+				else:
+					if instancefilter != None:
+						instances_to_update.extend(instancefilter)
+					else:
+						print("Please use --instancefilter to specify M365 endpoint instances to use to create Host Group definitions.")
+						return
+			# If there is no flag for check for updates, then always create Host Groups
 			else:
 				if instancefilter != None:
 					instances_to_update.extend(instancefilter)
